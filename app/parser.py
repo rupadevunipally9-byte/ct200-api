@@ -3,10 +3,8 @@ import re
 import unicodedata
 import pymupdf
 
-
-
-
 HEADING_RE = re.compile(r"^(\d+(?:\.\d+)*)\.?\s+(\S.*)$")
+LIST_RE = re.compile(r"^\d+\.\s")
 
 
 def clean(text):
@@ -30,6 +28,7 @@ def read_lines(pdf_path):
                     "text": text,
                     "bold": bool(span["flags"] & 16),
                     "size": round(span["size"], 1),
+                    "bbox": line["bbox"],
                 })
     return lines
 
@@ -47,7 +46,50 @@ def find_headings(lines):
                 "page": ln["page"],
             })
     return headings
-LIST_RE = re.compile(r"^\d+\.\s")
+
+
+def center_in(bbox, rect, pad=1):
+    cx = (bbox[0] + bbox[2]) / 2
+    cy = (bbox[1] + bbox[3]) / 2
+    return rect[0] - pad <= cx <= rect[2] + pad and rect[1] - pad <= cy <= rect[3] + pad
+
+
+def contained(bbox, rect, pad=2):
+    return (bbox[0] >= rect[0] - pad and bbox[2] <= rect[2] + pad
+            and bbox[1] >= rect[1] - pad and bbox[3] <= rect[3] + pad)
+
+
+def attach_tables(pdf_path, lines):
+    """Use PyMuPDF for the table SHAPE only. Cell text comes from our clean lines.
+    Raises an error if any line inside a table does not fit in a cell."""
+    doc = pymupdf.open(pdf_path)
+    tables = []
+    for page_no, page in enumerate(doc, start=1):
+        for t in page.find_tables().tables:
+            inside = [ln for ln in lines
+                      if ln["page"] == page_no and center_in(ln["bbox"], t.bbox)]
+            used = set()
+            rows = []
+            for row in t.rows:
+                cells = []
+                for cell_bbox in row.cells:
+                    if cell_bbox is None:
+                        cells.append("")
+                        continue
+                    in_cell = [ln for ln in inside if contained(ln["bbox"], cell_bbox)]
+                    in_cell.sort(key=lambda l: (l["bbox"][1], l["bbox"][0]))
+                    used.update(id(ln) for ln in in_cell)
+                    cells.append(" ".join(l["text"] for l in in_cell))
+                rows.append(cells)
+            if len(used) != len(inside):
+                raise ValueError(
+                    f"Table on page {page_no}: {len(inside) - len(used)} line(s) "
+                    f"do not fit in any cell. Table not supported, stopping.")
+            table_id = len(tables)
+            for ln in inside:
+                ln["table_id"] = table_id
+            tables.append({"page": page_no, "rows": rows})
+    return tables
 
 
 def normalize_for_hash(text):
@@ -59,11 +101,13 @@ def content_hash(text):
 
 
 def join_body(body_lines):
-    """Join lines into text. A new list item starts a new line;
-    everything else continues the previous line (this also fixes page breaks)."""
+    """A list item or table row starts a new line; everything else continues
+    the previous line (this also fixes paragraphs cut by page breaks)."""
     out = []
     for ln in body_lines:
-        if not out or LIST_RE.match(ln):
+        starts_new = (not out or LIST_RE.match(ln) or ln.startswith("|")
+                      or out[-1].startswith("|"))
+        if starts_new:
             out.append(ln)
         else:
             out[-1] += " " + ln
@@ -72,8 +116,9 @@ def join_body(body_lines):
 
 def build_tree(pdf_path):
     lines = read_lines(pdf_path)
+    tables = attach_tables(pdf_path, lines)
+    emitted = set()
 
-    # the title = the first lines with the biggest font size
     biggest = max(ln["size"] for ln in lines)
     title_lines = [ln["text"] for ln in lines if ln["size"] == biggest]
     nodes = [{
@@ -86,6 +131,15 @@ def build_tree(pdf_path):
     for ln in lines:
         if ln["size"] == biggest:
             continue  # skip title lines
+
+        table_id = ln.get("table_id")
+        if table_id is not None:
+            if table_id not in emitted:  # write the whole table once
+                emitted.add(table_id)
+                for row in tables[table_id]["rows"]:
+                    current["body_lines"].append("| " + " | ".join(row) + " |")
+            continue
+
         match = HEADING_RE.match(ln["text"])
         if ln["bold"] and match:
             number, title = match.groups()
