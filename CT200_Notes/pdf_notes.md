@@ -32,3 +32,17 @@
 
 \- 5.3 Data Export: new section
 
+
+
+\- Heading font sizes are inconsistent: 3.2 and 2.1.1.1 are size 11 bold (same size as body text)
+
+\- Table headers are bold but have no number
+
+\- List items 1-5 in 3.3 have numbers but are not bold
+
+\- Real PDF problem: paragraphs and sections get split across page breaks
+
+\- Special letters (ﬁ, ﬀ, ﬂ) and special hyphens (‑) must be cleaned
+
+\- Rule chosen: heading = bold AND starts with a number; level = count of number parts
+
