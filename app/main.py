@@ -5,7 +5,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app import models
-from app.db import Base, SessionLocal, engine
+from app.db import Base, engine, get_db
 from app.diffing import diff_summary
 from app.models import NodeVersion, Version
 from app.schemas import (ChangeReport, HistoryItem, NodeDetail, NodeSummary,
@@ -14,10 +14,9 @@ from app.schemas import (ChangeReport, HistoryItem, NodeDetail, NodeSummary,
 Base.metadata.create_all(engine)
 app = FastAPI(title="CT-200 Manual API")
 
+from app.selections import router as selections_router  # noqa: E402
 
-def get_db():
-    with SessionLocal() as db:
-        yield db
+app.include_router(selections_router)
 
 
 def resolve_version(db, number):

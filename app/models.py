@@ -51,3 +51,21 @@ class NodeVersion(Base):
     content_hash: Mapped[str] = mapped_column(String)
     change_status: Mapped[str] = mapped_column(String)   # new / added / unchanged / changed
     match_method: Mapped[str] = mapped_column(String)    # new / number+title / title-only
+
+class Selection(Base):
+    __tablename__ = "selections"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(default=now)
+
+
+class SelectionItem(Base):
+    """Points to one exact NodeVersion row, which never changes after saving."""
+    __tablename__ = "selection_items"
+    __table_args__ = (UniqueConstraint("selection_id", "node_version_id"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    selection_id: Mapped[int] = mapped_column(ForeignKey("selections.id"))
+    node_version_id: Mapped[int] = mapped_column(ForeignKey("node_versions.id"))
+    logical_id: Mapped[int] = mapped_column(ForeignKey("logical_nodes.id"))
+    version_number: Mapped[int]
+    content_hash: Mapped[str] = mapped_column(String)  # fingerprint at selection time

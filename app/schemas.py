@@ -1,5 +1,7 @@
-from pydantic import BaseModel, ConfigDict
+from datetime import datetime
+from typing import Annotated
 
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 class NodeSummary(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -66,3 +68,31 @@ class ChangeReport(BaseModel):
     changed_across_versions: bool
     history: list[HistoryItem]
     changes: list[StepChange]
+class SelectionCreate(BaseModel):
+    name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
+    node_ids: list[int] = Field(min_length=1)
+
+
+class SelectionItemOut(BaseModel):
+    node_version_id: int
+    logical_id: int
+    version: int
+    number: str
+    title: str
+    body: str                  # the exact pinned text
+    content_hash: str
+    latest_status: str         # current / changed / removed_in_latest
+
+
+class SelectionOut(BaseModel):
+    id: int
+    name: str
+    created_at: datetime
+    items: list[SelectionItemOut]
+
+
+class SelectionSummary(BaseModel):
+    id: int
+    name: str
+    created_at: datetime
+    item_count: int
