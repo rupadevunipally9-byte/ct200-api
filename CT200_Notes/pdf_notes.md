@@ -10,10 +10,6 @@
 
 \- "Error Codes" appears twice (4.2 and 7.1)
 
-\- Some headings are glued to the previous line, e.g. "Specifications2.1 General Specifications"
-
-\- Some words are glued together, e.g. "do notuse", "beenvalidated"
-
 \- Numbered list 1-5 inside 3.3 looks like headings but is not
 
 \- Tables in 2.1 and 4.2 have cells split across lines
