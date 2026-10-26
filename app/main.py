@@ -18,6 +18,10 @@ from app.selections import router as selections_router  # noqa: E402
 
 app.include_router(selections_router)
 
+from app.generations import router as generations_router  # noqa: E402
+
+app.include_router(generations_router)
+
 
 def resolve_version(db, number):
     if number is None:

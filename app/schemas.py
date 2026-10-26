@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import Annotated
+from app.generation import StoredTestCase
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
@@ -96,3 +97,24 @@ class SelectionSummary(BaseModel):
     name: str
     created_at: datetime
     item_count: int
+class SourceRef(BaseModel):
+    node_version_id: int
+    logical_id: int
+    version: int
+    number: str
+    title: str
+    content_hash: str
+
+
+class GenerationOut(BaseModel):
+    generation_id: str
+    selection_id: int
+    status: str
+    created_at: str
+    model: str
+    prompt_version: str
+    input_hash: str
+    attempts: int
+    reused: bool = False
+    sources: list[SourceRef]
+    test_cases: list[StoredTestCase]
