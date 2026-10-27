@@ -11,7 +11,7 @@ class LLMError(Exception):
 
 
 def model_name():
-    return os.environ.get("LLM_MODEL", "llama-3.3-70b-versatile")
+    return os.environ.get("LLM_MODEL", "openai/gpt-oss-120b")
 
 
 def call_llm(messages):
