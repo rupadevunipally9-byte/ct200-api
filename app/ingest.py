@@ -5,7 +5,8 @@ from sqlalchemy import select
 
 from app.models import Document, LogicalNode, NodeVersion, Version
 from app.parser import build_tree
-
+class AlreadyIngested(ValueError):
+    pass
 
 def norm_title(title):
     return " ".join(title.lower().split())
@@ -50,7 +51,7 @@ def ingest_pdf(db, pdf_path, doc_name="CT-200 Manual"):
     ).all()
     for v in versions:
         if v.file_sha256 == sha:
-            raise ValueError(f"This exact file is already ingested as version {v.number}.")
+            raise AlreadyIngested(f"This exact file is already ingested as version {v.number}.")
     latest = versions[-1] if versions else None
 
     version = Version(

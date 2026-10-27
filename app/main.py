@@ -34,6 +34,9 @@ def resolve_version(db, number):
 from app.retrieval import router as retrieval_router  # noqa: E402
 
 app.include_router(retrieval_router)
+from app.ingest_api import router as ingest_router  # noqa: E402
+
+app.include_router(ingest_router)
 
 
 def get_node(db, node_id):
