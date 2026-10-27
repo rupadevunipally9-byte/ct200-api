@@ -31,6 +31,9 @@ def resolve_version(db, number):
     if v is None:
         raise HTTPException(404, "Version not found (has any PDF been ingested?)")
     return v
+from app.retrieval import router as retrieval_router  # noqa: E402
+
+app.include_router(retrieval_router)
 
 
 def get_node(db, node_id):
