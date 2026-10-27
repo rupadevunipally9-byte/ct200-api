@@ -60,3 +60,11 @@ def test_only_real_changes_get_a_different_hash(v1, v2):
     added = set(v2) - set(v1)
     assert changed == {"2.1.1.1", "3.2", "4.2", "4.3"}
     assert added == {"5.3"}
+def test_pdf_without_text_layer_is_refused_with_a_clear_message(tmp_path):
+    import pymupdf
+    doc = pymupdf.open()
+    doc.new_page()                      # a blank page, like a scan with no text layer
+    path = tmp_path / "scan.pdf"
+    doc.save(str(path))
+    with pytest.raises(ValueError, match="No text found"):
+        build_tree(str(path))

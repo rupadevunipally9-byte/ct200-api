@@ -116,10 +116,13 @@ def join_body(body_lines):
 
 def build_tree(pdf_path):
     lines = read_lines(pdf_path)
+    if not lines:
+        raise ValueError("No text found in the PDF. It may be a scanned document; "
+                         "the OCR fallback is not implemented, so nothing was ingested.")
     tables = attach_tables(pdf_path, lines)
     emitted = set()
 
-    biggest = max(ln["size"] for ln in lines)
+    biggest = max(ln["size"] for ln in lines)   
     title_lines = [ln["text"] for ln in lines if ln["size"] == biggest]
     nodes = [{
         "number": "0", "title": " ".join(title_lines), "level": 0,
